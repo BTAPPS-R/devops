@@ -1,1 +1,45 @@
-az group create --name myResourceGroup --location eastus
+
+az group create --name myazuredemoGroup --location eastus
+
+
+az vmss create \
+  --resource-group myazuredemoGroup \
+  --name myazuredemoScaleSet \
+  --image UbuntuLTS \
+  --upgrade-policy-mode automatic \
+  --instance-count 2 \
+  --admin-username azureuser \
+  --generate-ssh-keys
+
+az monitor autoscale create \
+  --resource-group myazuredemoGroup \
+  --resource myazuredemoScaleSet \
+  --resource-type Microsoft.Compute/virtualMachineScaleSets \
+  --name autoscale \
+  --min-count 2 \
+  --max-count 4 \
+  --count 2
+
+az monitor autoscale rule create \
+  --resource-group myazuredemoGroup \
+  --autoscale-name autoscale \
+  --condition "Percentage CPU > 70 avg 5m" \
+  --scale out 2
+
+az monitor autoscale rule create \
+  --resource-group myazuredemoGroup \
+  --autoscale-name autoscale \
+  --condition "Percentage CPU < 30 avg 5m" \
+  --scale in 1
+
+az vmss list-instance-connection-info \
+  --resource-group myazuredemoGroup \
+  --name myazuredemoScaleSet   
+
+  watch az vmss list-instances \
+  --resource-group myazuredemoGroup \
+  --name myazuredemoScaleSet \
+  --output table
+
+
+  az group delete --name myazuredemoGroup --yes --no-wait
